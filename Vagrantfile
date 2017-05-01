@@ -16,7 +16,7 @@ $vm_cpus = 1
 $shared_folders = {}
 $forwarded_ports = {}
 $subnet = "172.17.8"
-$box = "bento/ubuntu-16.04"
+$box = "ubuntu/xenial64"
 # The first three nodes are etcd servers
 $etcd_instances = $num_instances
 # The first two nodes are masters
@@ -54,7 +54,8 @@ end
 
 Vagrant.configure("2") do |config|
   # always use Vagrants insecure key
-  config.ssh.insert_key = false
+  #config.ssh.insert_key = false
+  config.ssh.insert_key = true
   config.vm.box = $box
 
   # plugin conflict
