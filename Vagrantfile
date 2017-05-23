@@ -12,11 +12,11 @@ $num_instances = 3
 $instance_name_prefix = "k8s"
 $vm_gui = false
 $vm_memory = 1536
-$vm_cpus = 1
+$vm_cpus = 2
 $shared_folders = {}
 $forwarded_ports = {}
 $subnet = "172.17.8"
-$box = "bento/ubuntu-16.04"
+$box = "ubuntu/xenial64"
 # The first three nodes are etcd servers
 $etcd_instances = $num_instances
 # The first two nodes are masters
@@ -24,6 +24,7 @@ $kube_master_instances = $num_instances == 1 ? $num_instances : ($num_instances 
 # All nodes are kube nodes
 $kube_node_instances = $num_instances
 $local_release_dir = "/vagrant/temp"
+$ssh_key = File.read(File.join(Dir.home, ".ssh", "id_rsa.pub"))
 
 host_vars = {}
 
@@ -54,12 +55,19 @@ end
 
 Vagrant.configure("2") do |config|
   # always use Vagrants insecure key
-  config.ssh.insert_key = false
+  #config.ssh.insert_key = false
+  config.ssh.insert_key = true
   config.vm.box = $box
 
   # plugin conflict
   if Vagrant.has_plugin?("vagrant-vbguest") then
     config.vbguest.auto_update = false
+  end
+
+  if Vagrant.has_plugin?("vagrant-hostmanager")
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.include_offline = true
   end
 
   (1..$num_instances).each do |i|
@@ -105,6 +113,14 @@ Vagrant.configure("2") do |config|
         "kube_network_plugin": "flannel",
       }
       config.vm.network :private_network, ip: ip
+
+      if $ssh_key
+        config.vm.provision :shell, inline: <<-SHELL
+          echo 'appending SSH Pub Key to ~/ubuntu/.ssh/authorized_keys'
+          echo '#{$ssh_key}' >> /home/ubuntu/.ssh/authorized_keys
+          chmod 600 /home/ubuntu/.ssh/authorized_keys
+        SHELL
+      end
 
       # Only execute once the Ansible provisioner,
       # when all the machines are up and ready.
