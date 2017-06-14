@@ -7,15 +7,6 @@ Vagrant.require_version ">= 1.8.0"
 
 CONFIG = File.join(File.dirname(__FILE__), "vagrant/config.rb")
 
-COREOS_URL_TEMPLATE = "https://storage.googleapis.com/%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json"
-
-SUPPORTED_OS = {
-  "coreos-stable" => {box: "coreos-stable",      bootstrap_os: "coreos", user: "core", box_url: COREOS_URL_TEMPLATE % ["stable"]},
-  "coreos-alpha"  => {box: "coreos-alpha",       bootstrap_os: "coreos", user: "core", box_url: COREOS_URL_TEMPLATE % ["alpha"]},
-  "coreos-beta"   => {box: "coreos-beta",        bootstrap_os: "coreos", user: "core", box_url: COREOS_URL_TEMPLATE % ["beta"]},
-  "ubuntu"        => {box: "bento/ubuntu-16.04", bootstrap_os: "ubuntu", user: "ubuntu"},
-}
-
 # Defaults for config options defined in CONFIG
 $num_instances = 3
 $instance_name_prefix = "k8s"
@@ -33,6 +24,7 @@ $kube_master_instances = $num_instances == 1 ? $num_instances : ($num_instances 
 # All nodes are kube nodes
 $kube_node_instances = $num_instances
 $local_release_dir = "/vagrant/temp"
+$ssh_key = File.read(File.join(Dir.home, ".ssh", "id_rsa.pub"))
 
 host_vars = {}
 
@@ -64,7 +56,8 @@ end
 
 Vagrant.configure("2") do |config|
   # always use Vagrants insecure key
-  config.ssh.insert_key = false
+  #config.ssh.insert_key = false
+  config.ssh.insert_key = true
   config.vm.box = $box
   if SUPPORTED_OS[$os].has_key? :box_url
     config.vm.box_url = SUPPORTED_OS[$os][:box_url]
@@ -73,6 +66,12 @@ Vagrant.configure("2") do |config|
   # plugin conflict
   if Vagrant.has_plugin?("vagrant-vbguest") then
     config.vbguest.auto_update = false
+  end
+
+  if Vagrant.has_plugin?("vagrant-hostmanager")
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.include_offline = true
   end
 
   (1..$num_instances).each do |i|
@@ -119,6 +118,14 @@ Vagrant.configure("2") do |config|
         "bootstrap_os": SUPPORTED_OS[$os][:bootstrap_os]
       }
       config.vm.network :private_network, ip: ip
+
+      if $ssh_key
+        config.vm.provision :shell, inline: <<-SHELL
+          echo 'appending SSH Pub Key to ~/ubuntu/.ssh/authorized_keys'
+          echo '#{$ssh_key}' >> /home/ubuntu/.ssh/authorized_keys
+          chmod 600 /home/ubuntu/.ssh/authorized_keys
+        SHELL
+      end
 
       # Only execute once the Ansible provisioner,
       # when all the machines are up and ready.
