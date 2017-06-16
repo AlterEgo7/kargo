@@ -59,6 +59,7 @@ spec:
     - --oidc-groups-claim={{ kube_oidc_groups_claim }}
 {%   endif %}
 {% endif %}
+    - --kubelet-preferred-address-types={{ kube_apiserver_preferred_address_types }}
     - --secure-port={{ kube_apiserver_port }}
     - --insecure-port={{ kube_apiserver_insecure_port }}
     - --storage-backend={{ kube_apiserver_storage_backend }}

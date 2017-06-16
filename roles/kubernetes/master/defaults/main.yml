@@ -19,6 +19,8 @@ kube_apiserver_storage_backend: etcd3
 # By default, force back to etcd2. Set to true to force etcd3 (experimental!)
 force_etcd3: false
 
+kube_apiserver_preferred_address_types: Hostname,InternalIP,ExternalIP,LegacyHostIP
+
 # Limits for kube components
 kube_controller_memory_limit: 512M
 kube_controller_cpu_limit: 250m
