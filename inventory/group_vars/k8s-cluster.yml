@@ -7,6 +7,7 @@ kube_config_dir: /etc/kubernetes
 kube_script_dir: "{{ bin_dir }}/kubernetes-scripts"
 kube_manifest_dir: "{{ kube_config_dir }}/manifests"
 system_namespace: kube-system
+kube_apiserver_node_port_range: "5000-50000"
 
 # Logging directory (sysvinit systems)
 kube_log_dir: "/var/log/kubernetes"
@@ -69,7 +70,7 @@ kube_users:
 
 # Choose network plugin (calico, weave or flannel)
 # Can also be set to 'cloud', which lets the cloud provider setup appropriate routing
-kube_network_plugin: calico
+kube_network_plugin: flannel
 
 # Enable kubernetes network policies
 enable_network_policy: false
@@ -115,7 +116,7 @@ docker_daemon_graph: "/var/lib/docker"
 ## This string should be exactly as you wish it to appear.
 ## An obvious use case is allowing insecure-registry access
 ## to self hosted registries like so:
-docker_options: "--insecure-registry={{ kube_service_addresses }} --graph={{ docker_daemon_graph }}"
+docker_options: "--insecure-registry={{ kube_service_addresses }} --graph={{ docker_daemon_graph }} --insecure-registry=http://192.168.62.1:5000  --registry-mirror=http://192.168.62.1:5000"
 docker_bin_dir: "/usr/bin"
 
 # Settings for containerized control plane (etcd/kubelet/secrets)
